@@ -1,0 +1,948 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#6200ee"><meta name="author" content="卡西猫倒"><meta name="copyright" content="卡西猫倒"><meta name="generator" content="Hexo 5.4.0"><meta name="theme" content="hexo-theme-yun"><title>读《Vue.js设计与实现》- 响应系统 | 卡西猫倒的小站</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&amp;display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/star-markdown-css@0.1.25/dist/yun/yun-markdown.min.css"><script src="//at.alicdn.com/t/font_1140697_dxory92pb0h.js" async></script><script src="https://cdn.jsdelivr.net/npm/scrollreveal/dist/scrollreveal.min.js" defer></script><script>function initScrollReveal() {
+  [".post-card",".post-content img"].forEach((target)=> {
+    ScrollReveal().reveal(target);
+  })
+}
+document.addEventListener("DOMContentLoaded", initScrollReveal);
+document.addEventListener("pjax:success", initScrollReveal);
+</script><link id="light-prism-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@latest/themes/prism.css" media="(prefers-color-scheme: light)"><link id="dark-prism-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@latest/themes/prism-tomorrow.css" media="(prefers-color-scheme: dark)"><link rel="icon" type="image/svg+xml" href="/yun.svg"><link rel="mask-icon" href="/yun.svg" color="#6200ee"><link rel="preload" href="/css/hexo-theme-yun.css" as="style"><link rel="preload" href="/js/utils.js" as="script"><link rel="preload" href="/js/hexo-theme-yun.js" as="script"><link rel="prefetch" href="/js/sidebar.js" as="script"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><script id="yun-config">
+    const Yun = window.Yun || {};
+    window.CONFIG = {"hostname":"meglody.github.io","root":"/","title":"卡西猫倒的小站","version":"1.7.0","mode":"auto","copycode":true,"page":{"isPost":true},"i18n":{"placeholder":"搜索...","empty":"找不到您查询的内容: ${query}","hits":"找到 ${hits} 条结果","hits_time":"找到 ${hits} 条结果（用时 ${time} 毫秒）"},"anonymous_image":"https://cdn.jsdelivr.net/gh/YunYouJun/cdn/img/avatar/none.jpg"};
+  </script><link rel="stylesheet" href="/css/hexo-theme-yun.css"><script src="/js/utils.js"></script><script src="/js/hexo-theme-yun.js"></script><link rel="stylesheet" href="/css/markdown-mine.css"><link rel="stylesheet" href="/css/markdown-meglody.css"><link rel="preconnect" href="https://www.google-analytics.com" crossorigin><script async src="https://www.googletagmanager.com/gtag/js?id=G-DBJ06R3DVX"></script><script>if (CONFIG.hostname === location.hostname) {
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-DBJ06R3DVX');
+}</script><script>(function(){
+  var bp = document.createElement('script');
+  var curProtocol = window.location.protocol.split(':')[0];
+  if (curProtocol === 'https') {
+    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+  }
+  else {
+    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+  }
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(bp, s);
+})();</script><meta name="description" content="了解大型框架要从读源码开始。 了解源码设计与实现思想要从框架的设计和参与者的书本开始。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="读《Vue.js设计与实现》- 响应系统">
+<meta property="og:url" content="https://meglody.github.io/read/%E8%AF%BB%E3%80%8AVue-js%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%E3%80%8B-%20%E5%93%8D%E5%BA%94%E7%B3%BB%E7%BB%9F/index.html">
+<meta property="og:site_name" content="卡西猫倒的小站">
+<meta property="og:description" content="了解大型框架要从读源码开始。 了解源码设计与实现思想要从框架的设计和参与者的书本开始。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/article-images/read-vuejs/%E6%A1%B6%E7%9A%84%E6%A6%82%E5%BF%B5.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/article-images/read-vuejs/%E6%A1%B6%E7%9A%84%E6%A6%82%E5%BF%B52.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/article-images/read-vuejs/%E6%A1%B6%E7%9A%84%E6%A6%82%E5%BF%B53.gif">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/article-images/read-vuejs/WeakMap%E3%80%81Map%E5%92%8CSet%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB.gif">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/article-images/read-vuejs/WeakMap%E3%80%81Map%E5%92%8CSet%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB.png">
+<meta property="og:image" content="https://shanghai-1309153523.cos.ap-shanghai.myqcloud.com/%E5%88%86%E6%94%AF%E5%88%87%E6%8D%A2%E4%B8%8Ecleanup.gif">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/article-images/read-vuejs/%E5%89%AF%E4%BD%9C%E7%94%A8%E5%87%BD%E6%95%B0%E6%A0%88.gif">
+<meta property="article:published_time" content="2022-02-22T06:37:13.000Z">
+<meta property="article:modified_time" content="2022-03-04T09:07:44.000Z">
+<meta property="article:author" content="卡西猫倒">
+<meta property="article:tag" content="架构">
+<meta property="article:tag" content="vue">
+<meta property="article:tag" content="js">
+<meta property="article:tag" content="响应式">
+<meta property="article:tag" content="响应系统">
+<meta property="article:tag" content="副作用函数">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/article-images/read-vuejs/%E6%A1%B6%E7%9A%84%E6%A6%82%E5%BF%B5.png"><script src="/js/ui/mode.js"></script></head><body><canvas id="trianglifyContainer"></canvas><script defer src="https://cdn.jsdelivr.net/npm/trianglify@4/dist/trianglify.bundle.js"></script><script>document.addEventListener("DOMContentLoaded", () => {
+  const pattern = trianglify({
+    width: 800,
+    height: 600,
+    cellSize: 75,
+    palette: ["YlGnBu", "GnBu", "Purples", "Blues"],
+  });
+  const canvasOpts = {
+    applyCssScaling: false
+  }
+  document.body.appendChild(pattern.toCanvas(trianglifyContainer, canvasOpts));
+});</script><div class="container"><a class="sidebar-toggle hty-icon-button" id="menu-btn"><div class="hamburger hamburger--spin" type="button"><span class="hamburger-box"><span class="hamburger-inner"></span></span></div></a><div class="sidebar-toggle sidebar-overlay"></div><aside class="sidebar"><script src="/js/sidebar.js"></script><ul class="sidebar-nav"><li class="sidebar-nav-item sidebar-nav-toc hty-icon-button sidebar-nav-active" data-target="post-toc-wrap" title="文章目录"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-list-ordered"></use></svg></li><li class="sidebar-nav-item sidebar-nav-overview hty-icon-button" data-target="site-overview-wrap" title="站点概览"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-passport-line"></use></svg></li></ul><div class="sidebar-panel" id="site-overview-wrap"><div class="site-info fix-top"><a class="site-author-avatar" href="/about/" title="卡西猫倒"><img width="96" loading="lazy" src="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/avatar2.jpeg" alt="卡西猫倒"><span class="site-author-status" title="神游中">🐳</span></a><div class="site-author-name"><a href="/about/">卡西猫倒</a></div><span class="site-name">卡西猫倒的小站</span><sub class="site-subtitle">过往一瞬，知己者寥数，善己者方能几何？勿忘初心，珍惜现在，随遇而安，岁月静好。</sub><div class="site-desciption">好学前端，喜欢研究工程化/部署运维，TS，WebGL，目前学习WebGL、React、元数据和架构</div></div><nav class="site-state"><a class="site-state-item hty-icon-button icon-home" href="/" title="首页"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-home-4-line"></use></svg></span></a><div class="site-state-item"><a href="/archives/" title="归档"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-archive-line"></use></svg></span><span class="site-state-item-count">10</span></a></div><div class="site-state-item"><a href="/categories/" title="分类"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-folder-2-line"></use></svg></span><span class="site-state-item-count">4</span></a></div><div class="site-state-item"><a href="/tags/" title="标签"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="site-state-item-count">26</span></a></div><a class="site-state-item hty-icon-button" target="_blank" rel="noopener" href="https://yun.yunyoujun.cn" title="Yun主题文档"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-settings-line"></use></svg></span></a></nav><hr style="margin-bottom:0.5rem"><div class="links-of-author"><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://wpa.qq.com/msgrd?v=3&amp;uin=30755703&amp;site=qq&amp;menu=yes" title="QQ" target="_blank" style="color:#12B7F5"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-qq-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://github.com/Meglody" title="GitHub" target="_blank" style="color:#181717"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-github-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="mailto:30755703@qq.com" title="E-Mail" target="_blank" style="color:#8E71C1"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-mail-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://music.163.com/#/user/home?id=260476301" title="网易云音乐" target="_blank" style="color:#C10D0C"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-netease-cloud-music-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://space.bilibili.com/453065" title="哔哩哔哩动画" target="_blank" style="color:#FF8EB3"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-bilibili-line"></use></svg></a></div><br><a class="links-item hty-icon-button" id="toggle-mode-btn" href="javascript:;" title="Mode" style="color: #f1cb64"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-contrast-2-line"></use></svg></a></div><div class="sidebar-panel sidebar-panel-active" id="post-toc-wrap"><div class="post-toc"><div class="post-toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E7%AF%87-%E5%93%8D%E5%BA%94%E7%B3%BB%E7%BB%9F"><span class="toc-number">1.</span> <span class="toc-text">第二篇 响应系统</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E5%9B%9B%E7%AB%A0-%E5%93%8D%E5%BA%94%E7%B3%BB%E7%BB%9F%E7%9A%84%E4%BD%9C%E7%94%A8%E4%B8%8E%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.1.</span> <span class="toc-text">第四章 响应系统的作用与实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%93%8D%E5%BA%94%E5%BC%8F%E6%95%B0%E6%8D%AE%E4%B8%8E%E5%89%AF%E4%BD%9C%E7%94%A8%E5%87%BD%E6%95%B0"><span class="toc-number">1.1.1.</span> <span class="toc-text">响应式数据与副作用函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%93%8D%E5%BA%94%E5%BC%8F%E6%95%B0%E6%8D%AE%E7%9A%84%E5%9F%BA%E6%9C%AC%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.1.2.</span> <span class="toc-text">响应式数据的基本实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BE%E8%AE%A1%E4%B8%80%E4%B8%AA%E5%AE%8C%E5%96%84%E7%9A%84%E5%93%8D%E5%BA%94%E7%B3%BB%E7%BB%9F"><span class="toc-number">1.1.3.</span> <span class="toc-text">设计一个完善的响应系统</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E6%94%AF%E5%88%87%E6%8D%A2%E4%B8%8Ecleanup"><span class="toc-number">1.1.4.</span> <span class="toc-text">分支切换与cleanup</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B5%8C%E5%A5%97%E7%9A%84effect%E4%B8%8Eeffect%E6%A0%88"><span class="toc-number">1.1.5.</span> <span class="toc-text">嵌套的effect与effect栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%81%BF%E5%85%8D%E6%97%A0%E9%99%90%E9%80%92%E5%BD%92%E5%BE%AA%E7%8E%AF"><span class="toc-number">1.1.6.</span> <span class="toc-text">避免无限递归循环</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B0%83%E5%BA%A6%E6%89%A7%E8%A1%8C"><span class="toc-number">1.1.7.</span> <span class="toc-text">调度执行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%A1%E7%AE%97%E5%B1%9E%E6%80%A7-computed-%E4%B8%8E-lazy"><span class="toc-number">1.1.8.</span> <span class="toc-text">计算属性 computed 与 lazy</span></a></li></ol></li></ol></li></ol></div></div></div></aside><main class="sidebar-translate" id="content"><div id="post"><article class="hty-card post-block" itemscope itemtype="https://schema.org/Article"><link itemprop="mainEntityOfPage" href="https://meglody.github.io/read/%E8%AF%BB%E3%80%8AVue-js%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%E3%80%8B-%20%E5%93%8D%E5%BA%94%E7%B3%BB%E7%BB%9F/"><span hidden itemprop="author" itemscope itemtype="https://schema.org/Person"><meta itemprop="name" content="卡西猫倒"><meta itemprop="description"></span><span hidden itemprop="publisher" itemscope itemtype="https://schema.org/Organization"><meta itemprop="name" content="卡西猫倒的小站"></span><header class="post-header"><h1 class="post-title" itemprop="name headline">读《Vue.js设计与实现》- 响应系统<a class="post-edit-link" href="https://github.com/Meglody/Meglody.github.io/tree/main/source/_posts/read/读《Vue-js设计与实现》- 响应系统.md" target="_blank" title="编辑" rel="noopener"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-edit-line"></use></svg></a></h1><div class="post-meta"><div class="post-time" style="display:inline-block"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-line"></use></svg></span> <span class="post-meta-icon-text">发表于</span> <time title="创建时间：2022-02-22 14:37:13" itemprop="dateCreated datePublished" datetime="2022-02-22T14:37:13+08:00">2022-02-22</time><span class="post-meta-divider">-</span><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-2-line"></use></svg></span> <span class="post-meta-icon-text">更新于</span> <time title="修改时间：2022-03-04 17:07:44" itemprop="dateModified" datetime="2022-03-04T17:07:44+08:00">2022-03-04</time></div><span class="leancloud_visitors" id="/read/%E8%AF%BB%E3%80%8AVue-js%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%E3%80%8B-%20%E5%93%8D%E5%BA%94%E7%B3%BB%E7%BB%9F/" data-flag-title="读《Vue.js设计与实现》- 响应系统"><span class="post-meta-divider">-</span><span class="post-meta-item-icon" title="阅读次数"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-eye-line"></use></svg> <span class="leancloud-visitors-count"></span></span></span><span class="post-meta-divider">-</span><a href="#comment"><span class="post-meta-item-icon" title="评论数"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-chat-3-line"></use></svg> <span class="waline-comment-count" id="/read/%E8%AF%BB%E3%80%8AVue-js%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%E3%80%8B-%20%E5%93%8D%E5%BA%94%E7%B3%BB%E7%BB%9F/"></span></span></a><div class="post-classify"><span class="post-category"> <span class="post-meta-item-icon" style="margin-right:3px;"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-folder-line"></use></svg></span><span itemprop="about" itemscope itemtype="https://schema.org/Thing"><a class="category-item" href="/categories/%E7%AC%94%E8%AE%B0/" style="--text-color:dimgray" itemprop="url" rel="index"><span itemprop="text">笔记</span></a></span></span><span class="post-tag"><span class="post-meta-divider">-</span><a class="tag-item" href="/tags/%E6%9E%B6%E6%9E%84/" style="--text-color:var(--hty-text-color)"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="tag-name">架构</span></a><a class="tag-item" href="/tags/vue/" style="--text-color:var(--hty-text-color)"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="tag-name">vue</span></a><a class="tag-item" href="/tags/js/" style="--text-color:var(--hty-text-color)"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="tag-name">js</span></a><a class="tag-item" href="/tags/%E5%93%8D%E5%BA%94%E5%BC%8F/" style="--text-color:var(--hty-text-color)"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="tag-name">响应式</span></a><a class="tag-item" href="/tags/%E5%93%8D%E5%BA%94%E7%B3%BB%E7%BB%9F/" style="--text-color:var(--hty-text-color)"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="tag-name">响应系统</span></a><a class="tag-item" href="/tags/%E5%89%AF%E4%BD%9C%E7%94%A8%E5%87%BD%E6%95%B0/" style="--text-color:var(--hty-text-color)"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="tag-name">副作用函数</span></a></span></div></div></header><section class="post-body" itemprop="articleBody"><div class="post-content markdown-body" style="--smc-primary:#6200ee;"><blockquote>
+<p>了解大型框架要从读源码开始。</p>
+<p>了解源码设计与实现思想要从框架的设计和参与者的书本开始。</p>
+</blockquote>
+<span id="more"></span>
+
+<h1 id="第二篇-响应系统"><a href="#第二篇-响应系统" class="headerlink" title="第二篇 响应系统"></a>第二篇 响应系统</h1><h2 id="第四章-响应系统的作用与实现"><a href="#第四章-响应系统的作用与实现" class="headerlink" title="第四章 响应系统的作用与实现"></a>第四章 响应系统的作用与实现</h2><h3 id="响应式数据与副作用函数"><a href="#响应式数据与副作用函数" class="headerlink" title="响应式数据与副作用函数"></a>响应式数据与副作用函数</h3><blockquote>
+<p>本章会用大量篇幅介绍响应式系统，并深入很多响应式系统设计时需要考虑的细节问题。</p>
+</blockquote>
+<p>首先讨论的是<code>响应式数据</code>和<code>副作用函数</code>。<code>副作用函数</code>指的是会产生<code>副作用</code>的函数，如下代码所示:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    document<span class="token punctuation">.</span>body<span class="token punctuation">.</span>innerText <span class="token operator">=</span> <span class="token string">'hello vue3'</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>当effect函数执行的时候，它会设置body的内容，但是除了effect函数以外，任何函数都有可能读取或设置body的内容。</p>
+<blockquote>
+<p>也就是说effect函数会直接或者间接的影响其他函数的执行。</p>
+</blockquote>
+<p>这时我们就说effect函数产生了<code>副作用</code>。</p>
+<p>一个函数修改了全局变量，这其实也是一种副作用。</p>
+<p>理解了什么事副作用函数，再来说说什么是响应式数据。</p>
+<p>假设在一个副作用函数中读区了某个对象的属性:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token punctuation">&#123;</span> text<span class="token operator">:</span> <span class="token string">'hello world'</span> <span class="token punctuation">&#125;</span>
+<span class="token keyword">function</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    document<span class="token punctuation">.</span>body<span class="token punctuation">.</span>innerText <span class="token operator">=</span> obj<span class="token punctuation">.</span>text
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>如上代码所示，副作用函数<code>effect</code>会设置<code>body</code>元素的<code>innerText</code>属性，其值为<code>obj.text</code>，我们希望当<code>obj.text</code>的值发生变化的时候，副作用函数<code>effect</code>会重新执行。</p>
+<h3 id="响应式数据的基本实现"><a href="#响应式数据的基本实现" class="headerlink" title="响应式数据的基本实现"></a>响应式数据的基本实现</h3><p>如何才能让obj变成响应式数据呢？通过观察我们能发现两个线索：</p>
+<ul>
+<li>当副作用函数effect执行时，会触发字段obj.text的<code>读取</code>操作；</li>
+<li>当修改obj.text的值的时候，会触发字段obj.text的<code>设置(*写入)</code>操作；</li>
+</ul>
+<blockquote>
+<p>如果我们能拦截对象的读取与设置操作，事情就变得简单了。</p>
+</blockquote>
+<p>即: 当读取obj.text字段的时候，将副作用函数<code>储存</code>进一个<code>“桶”</code>里面，当设置obj.text字段的时候，再把副作用函数<code>effect</code>从<code>“桶”</code>里取出并执行即可。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/article-images/read-vuejs/%E6%A1%B6%E7%9A%84%E6%A6%82%E5%BF%B5.png" alt="将副作用函数储存到桶中" loading="lazy"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/article-images/read-vuejs/%E6%A1%B6%E7%9A%84%E6%A6%82%E5%BF%B52.png" alt="把副作用函数从&quot;桶&quot;内取出并执行" loading="lazy"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/article-images/read-vuejs/%E6%A1%B6%E7%9A%84%E6%A6%82%E5%BF%B53.gif" alt="把副作用函数从&quot;桶&quot;内取出并执行-动图" loading="lazy"></p>
+<p>问题的关键现在变为了我们如何才能拦截一个对象属性的读取和设置操作。在ES2015之前，我们只能通过Obeject.defineProperty函数实现，这也是Vue.js 2中采用的方式。在ES2015+中，我们可以使用代理对象Proxy来实现，这也是Vue.js 3所采用的方式。</p>
+<p>使用Proxy把上面的思路实现:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token comment">// 储存副作用函数的“桶”</span>
+<span class="token keyword">const</span> bucket <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Set</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment">// 原始数据</span>
+<span class="token keyword">const</span> data <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+    text<span class="token operator">:</span> <span class="token string">'hello world'</span>
+<span class="token punctuation">&#125;</span>
+<span class="token comment">// 对原始数据进行代理</span>
+<span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 拦截读取操作</span>
+    <span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token comment">// 将副作用函数effect添加入“桶”中</span>
+        bucket<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>effect<span class="token punctuation">)</span>
+        <span class="token comment">// 返回属性值</span>
+        <span class="token keyword">return</span> target<span class="token punctuation">[</span>key<span class="token punctuation">]</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// 拦截设置操作</span>
+    <span class="token function">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> newValue<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token comment">// 设置属性值</span>
+        target<span class="token punctuation">[</span>key<span class="token punctuation">]</span> <span class="token operator">=</span> newValue
+        <span class="token comment">// 把副作用函数从"桶"内取出并执行</span>
+        bucket<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">fn</span> <span class="token operator">=></span> <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token comment">// 返回执行结果</span>
+        <span class="token keyword">return</span> <span class="token boolean">true</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token comment">// 测试代码</span>
+<span class="token keyword">function</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    document<span class="token punctuation">.</span>body<span class="token punctuation">.</span>innerText <span class="token operator">=</span> obj<span class="token punctuation">.</span>text
+<span class="token punctuation">&#125;</span>
+<span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token function">setTimeout</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+    obj<span class="token punctuation">.</span>text <span class="token operator">=</span> <span class="token string">'hello vue3'</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">,</span><span class="token number">1000</span><span class="token punctuation">)</span></code></pre>
+
+<p>在浏览器中运行会得到期望结果，但是直接通过名字<code>effect</code>来获取副作用函数还是过于局限了，我们需要<code>完善获取副作用函数</code>的能力。</p>
+<h3 id="设计一个完善的响应系统"><a href="#设计一个完善的响应系统" class="headerlink" title="设计一个完善的响应系统"></a>设计一个完善的响应系统</h3><p>从上一节的例子不难看出，一个响应系统的工作流程如下：</p>
+<ul>
+<li>当<code>读取</code>操作发生时，将副作用函数存入<code>“桶”</code>中；</li>
+<li>当<code>设置</code>操作发生时，将副作用函数从<code>“桶”</code>中拿出并执行。</li>
+</ul>
+<p>但是上一节的例子，一旦副作用函数不叫effect或者干脆是个匿名函数，那么这段代码就不能正确运行，副作用无法收集到“桶”中，这是<code>问题一</code>。</p>
+<blockquote>
+<p>为了实现这一点，我们需要提供一个副作用函数注册机制。</p>
+</blockquote>
+<p>如下代码所示:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">let</span> activeEffect
+<span class="token keyword">const</span> <span class="token function-variable function">effect</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token parameter">fn</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 注册副作用函数</span>
+    activeEffect <span class="token operator">=</span> fn
+    <span class="token comment">// 执行副作用函数</span>
+    <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>我们会如下调用effect函数：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+    document<span class="token punctuation">.</span>body<span class="token punctuation">.</span>innerText <span class="token operator">=</span> obj<span class="token punctuation">.</span>text
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<p>我们将一个匿名的副作用函数传递给了effect函数作为参数，完成注册并执行，此时由于读取到了<code>obj.text</code>会触发Proxy<code>读取</code>操作的<code>get</code>拦截，所以接着我们应该去修改<code>get</code>的拦截逻辑。</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>activeEffect<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            bucket<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>activeEffect<span class="token punctuation">)</span> <span class="token comment">// 更改此处</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> target<span class="token punctuation">[</span>key<span class="token punctuation">]</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token function">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> newValue<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        bucket<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">fn</span> <span class="token operator">=></span> <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token boolean">true</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<p>这样响应式系统就不需要依赖副作用函数的名字了，<code>问题一</code>解决。</p>
+<p>但如果我们对这段代码稍加测试，会发现<code>问题二</code>：即使是不存在的属性的更改也会触发副作用函数的执行，即<code>没用在副作用函数与被操作的字段之间建立明确的联系</code>。</p>
+<blockquote>
+<p>为了解决这个问题，我们只能重新设计桶的结构。</p>
+</blockquote>
+<p>之前我们是使用<code>集合(Set)</code>来设计桶的结构的，目前来看，不能再使用了。那如何知道我们应该使用什么样的数据结构呢？</p>
+<blockquote>
+<p>观察:</p>
+</blockquote>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token function">effect</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    document<span class="token punctuation">.</span>body<span class="token punctuation">.</span>innerText <span class="token operator">=</span> obj<span class="token punctuation">.</span>text
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<p>在这段代码中存在三个角色：</p>
+<ul>
+<li>被操作(读取)的代理对象<code>obj</code>;</li>
+<li>被操作(读取)的字段名<code>text</code>;</li>
+<li>使用effect函数注册的副作用函数<code>effectFn</code>;</li>
+</ul>
+<p>三者的关系可通过一个树型结构来表示：</p>
+<pre class="language-yml" data-language="yml"><code class="language-yml">target:
+ - key:
+    - effectFn</code></pre>
+
+<p>如果有两个副作用函数同时作用于一个对象的属性值：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token function">effect</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token function">effectFn1</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    document<span class="token punctuation">.</span>body<span class="token punctuation">.</span>innerText <span class="token operator">=</span> obj<span class="token punctuation">.</span>text
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token function">effect</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token function">effectFn2</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    document<span class="token punctuation">.</span>body<span class="token punctuation">.</span>innerText <span class="token operator">=</span> obj<span class="token punctuation">.</span>text
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<pre class="language-yml" data-language="yml"><code class="language-yml">target:
+ - text: 
+    - effectFn1
+    - effectFn2</code></pre>
+
+<p>如果一个副作用函数作用于对象的两个属性：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+    document<span class="token punctuation">.</span>body<span class="token punctuation">.</span>innerText <span class="token operator">=</span> obj<span class="token punctuation">.</span>showText <span class="token operator">??</span> obj<span class="token punctuation">.</span>text
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<pre class="language-yml" data-language="yml"><code class="language-yml">target:
+ - showText:
+    - effectFn
+ - text:
+    - effectFn</code></pre>
+
+<p>两个副作用函数作用于不同对象的不同属性:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token function">effect</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token function">effectFn1</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    obj1<span class="token punctuation">.</span>text1
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token function">effect</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token function">effectFn2</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    obj2<span class="token punctuation">.</span>text2
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<pre class="language-yml" data-language="yml"><code class="language-yml">target1
+ - text1:
+    - effectFn1
+target2
+ - text2:
+    - effectFn2</code></pre>
+
+<p>总之这就是一个树型数据结构，拿上面的例子，我们改变了obj1.text1并不会触发effectFn1的重新执行，接下来我们需要实现重新设计的这个“桶”结构。</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token comment">// 存储副作用函数的桶，是一个WeakMap结构</span>
+<span class="token keyword">const</span> bucket <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">WeakMap</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>activeEffect<span class="token punctuation">)</span> <span class="token keyword">return</span>
+        <span class="token comment">// 根据target从“桶”中取得depsMaps，它是一个Map类型： key ---> effects</span>
+        <span class="token keyword">let</span> depsMap <span class="token operator">=</span> bucket<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span>
+        <span class="token comment">// 如果不存在depsMaps则创建并与target关联</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>depsMap<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            bucket<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>depsMap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Map</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token comment">// 根据key从depsMap中得到deps，它是一个Set类型，里面储存着与当前key相关的所有副作用函数: effects</span>
+        <span class="token keyword">let</span> deps <span class="token operator">=</span> depsMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+        <span class="token comment">// 如果不存在deps则创建并与key关联</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>deps<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            depsMap<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>deps <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Set</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token comment">// 最后将当前激活的副作用函数添加到“桶”中</span>
+        deps<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>activeEffect<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> target<span class="token punctuation">[</span>key<span class="token punctuation">]</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token function">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> newVal<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 设置属性值</span>
+        target<span class="token punctuation">[</span>key<span class="token punctuation">]</span> <span class="token operator">=</span> newVal
+        <span class="token comment">// 同上查找逻辑</span>
+        <span class="token keyword">const</span> depsMap <span class="token operator">=</span> bucket<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>depsMap<span class="token punctuation">)</span> <span class="token keyword">return</span>
+        <span class="token comment">// 同上查找逻辑</span>
+        <span class="token keyword">const</span> effects <span class="token operator">=</span> depsMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+        <span class="token comment">// 执行副作用函数</span>
+        effects <span class="token operator">&amp;&amp;</span> effects<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">fn</span> <span class="token operator">=></span> <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token boolean">true</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<p>从这段代码中可以看出构建数据结构的方式，我们分别使用了<code>WeakMap</code>、<code>Map</code>、<code>Set</code>三种数据结构:</p>
+<ul>
+<li>WeakMap 由 target —&gt; Map 构成；</li>
+<li>Map 由 key —&gt; Set 构成。</li>
+</ul>
+<p>其中<code>WeakMap</code>的键是原始对象<code>target</code>，值是一个<code>Map</code>实例；<code>Map</code>的键是原始对象<code>target</code>中的<code>key</code>，值是一个由副作用函数组成的<code>Set</code>实例。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/article-images/read-vuejs/WeakMap%E3%80%81Map%E5%92%8CSet%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB.gif" alt="WeakMap、Map和Set之间的关系-动图" loading="lazy"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/article-images/read-vuejs/WeakMap%E3%80%81Map%E5%92%8CSet%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB.png" alt="WeakMap、Map和Set之间的关系" loading="lazy"></p>
+<blockquote>
+<p>有关使用WeakMap：</p>
+</blockquote>
+<blockquote>
+<p>WeakMap对于key的引用是<code>弱引用</code>，所以WeakMap经常用于储存那些只有当key所引用的对象<code>存在</code>时（没有被垃圾回收器回收）才有价值的信息。</p>
+</blockquote>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> map <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Map</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token keyword">const</span> wm <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">WeakMap</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token punctuation">(</span><span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> foo <span class="token operator">=</span> <span class="token punctuation">&#123;</span>foo<span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">&#125;</span>
+    <span class="token keyword">const</span> bar <span class="token operator">=</span> <span class="token punctuation">&#123;</span>bar<span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">&#125;</span>
+    map<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>foo<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+    wm<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>bar<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+
+<p>当上面的代码执行完IIFE之后，垃圾回收器会认为: 在IIFE之外<code>不存在任何需要</code>用到局部变量<code>bar</code>的地方了，所以对于<code>bar</code>的引用已经不再需要了。此时垃圾回收器会把bar从内存中移除，我们无法获取weakmap的key，也就无法通过weakmap取得对象<code>bar</code>，这是WeakMap的<code>特性</code>(* WeakMap是不可遍历对象，不可被迭代器访问)。</p>
+<blockquote>
+<p>所以桶的外层结构使用WeakMap可以有效的防止内存溢出的发生。</p>
+</blockquote>
+<p>最后我们对现阶段成果做个封装，抽象出<code>track</code>和<code>trigger</code>两个函数:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> bucket <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">WeakMap</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">track</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> target<span class="token punctuation">[</span>key<span class="token punctuation">]</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token function">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> newVal<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">trigger</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> newVal<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token boolean">true</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+<span class="token keyword">function</span> <span class="token function">track</span><span class="token punctuation">(</span><span class="token parameter">target<span class="token punctuation">,</span> key</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>activeEffect<span class="token punctuation">)</span> <span class="token keyword">return</span>
+    <span class="token comment">// 根据target从“桶”中取得depsMaps，它是一个Map类型： key ---> effects</span>
+    <span class="token keyword">let</span> depsMap <span class="token operator">=</span> bucket<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span>
+    <span class="token comment">// 如果不存在depsMaps则创建并与target关联</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>depsMap<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        bucket<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>depsMap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Map</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// 根据key从depsMap中得到deps，它是一个Set类型，里面储存着与当前key相关的所有副作用函数: effects</span>
+    <span class="token keyword">let</span> deps <span class="token operator">=</span> depsMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+    <span class="token comment">// 如果不存在deps则创建并与key关联</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>deps<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        depsMap<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>deps <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Set</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// 最后将当前激活的副作用函数添加到“桶”中</span>
+    deps<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>activeEffect<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">function</span> <span class="token function">trigger</span><span class="token punctuation">(</span><span class="token parameter">target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> newVal</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token comment">// 设置属性值</span>
+    target<span class="token punctuation">[</span>key<span class="token punctuation">]</span> <span class="token operator">=</span> newVal
+    <span class="token comment">// 同上查找逻辑</span>
+    <span class="token keyword">const</span> depsMap <span class="token operator">=</span> bucket<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>depsMap<span class="token punctuation">)</span> <span class="token keyword">return</span>
+    <span class="token comment">// 同上查找逻辑</span>
+    <span class="token keyword">const</span> effects <span class="token operator">=</span> depsMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+    <span class="token comment">// 执行副作用函数</span>
+    effects <span class="token operator">&amp;&amp;</span> effects<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">fn</span> <span class="token operator">=></span> <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>这样能给我们带来极大的灵活性，至此<code>问题二</code>解决。</p>
+<h3 id="分支切换与cleanup"><a href="#分支切换与cleanup" class="headerlink" title="分支切换与cleanup"></a>分支切换与cleanup</h3><p>首先我们需要明确分支切换的定义，如下代码所示：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> data <span class="token operator">=</span> <span class="token punctuation">&#123;</span> ok<span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span> text<span class="token operator">:</span> <span class="token string">'hello world'</span> <span class="token punctuation">&#125;</span>
+<span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span> <span class="token comment">/* ... */</span> <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+    document<span class="token punctuation">.</span>body<span class="token punctuation">.</span>innerText <span class="token operator">=</span> obj<span class="token punctuation">.</span>ok <span class="token operator">?</span> obj<span class="token punctuation">.</span>text <span class="token operator">:</span> <span class="token string">'not'</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<p><code>effectFn</code>内部存在一个<code>三元表达式</code>，根据<code>obj.ok</code>值的不同，会执行不同的代码分支，即<code>obj.ok</code>的值发生变化时，代码的执行会跟着变化，这就是所谓的<code>分支切换</code>。</p>
+<p><code>分支切换</code>可能会产生遗留的<code>副作用函数</code>。<code>obj.ok</code>初始值为<code>true</code>时，会读取<code>obj.ok</code>和<code>obj.text</code>两个字段。此时<code>副作用函数</code>与<code>响应式数据</code>之间建立的关系入下：</p>
+<pre class="language-yml" data-language="yml"><code class="language-yml">target
+ - ok
+    - effectFn
+ - text
+    - effectFn</code></pre>
+
+<p>此时并没有什么问题，修改<code>obj.ok</code>和<code>obj.text</code>都应该去触发<code>effectFn</code>副作用函数的执行。</p>
+<p>但是一旦<code>obj.ok</code>变为<code>false</code>之后并触发副作用函数执行，由于此时代码相当于是:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token operator">...</span>
+document<span class="token punctuation">.</span>body<span class="token punctuation">.</span>innerText <span class="token operator">=</span> <span class="token boolean">false</span> <span class="token operator">?</span> obj<span class="token punctuation">.</span>text <span class="token operator">:</span> <span class="token string">'not'</span>
+<span class="token operator">...</span></code></pre>
+
+<p><code>obj.text</code>此时不会被读取，只会触发<code>obj.ok</code>的读取操作，所以理想情况下副作用函数<code>effectFn</code>不应该被字段<code>obj.text</code>所对应的依赖<code>集合</code>收集到。</p>
+<p>也就是说，<code>obj.ok</code>修改为<code>false</code>之后，无论再怎么修改<code>obj.text</code>的值都不应该触发副作用函数<code>effectFn</code>的执行，但按照前文的实现，我们还没有做到这一点，<code>问题三</code>出现了。</p>
+<p>为了解决这个问题，我们需要在每次副作用函数执行的时候先<code>把它从与之关联的所有依赖集合中删除</code>。</p>
+<!-- ![这里可能需要一张动图]() -->
+
+<p>当副作用函数执行完毕后，会重新建立联系，新的联系中不会包含<code>遗留</code>的副作用函数。所以接下来我们就要实现一个<code>每次副作用函数执行前从依赖集合中移除的自身</code>的操作。</p>
+<p>要将副作用函数从之前所有与之关联的依赖集合中移除，就需要明确知道哪些依赖集合收集了它，因此我们需要重新设计副作用函数: </p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">let</span> activeEffect
+<span class="token keyword">function</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token parameter">fn</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token comment">// 封装</span>
+    <span class="token keyword">const</span> <span class="token function-variable function">effectFn</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+        activeEffect <span class="token operator">=</span> fn
+        <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// 用于收集与该副作用函数相关联的依赖集合的数组</span>
+    effectFn<span class="token punctuation">.</span>deps <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token comment">// 延迟执行</span>
+    <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>那<code>effectFn.deps</code>又是怎么收集依赖集合的？我们需要修改一下<code>track</code>函数：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">track</span><span class="token punctuation">(</span><span class="token parameter">target<span class="token punctuation">,</span> key</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>activeEffect<span class="token punctuation">)</span> <span class="token keyword">return</span>
+    <span class="token keyword">let</span> depsMap <span class="token operator">=</span> bucket<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>depsMap<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        bucket<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>depsMap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Map</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">let</span> deps <span class="token operator">=</span> depsMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>deps<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        depsMap<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>deps <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Set</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// 将当前激活的副作用函数添加到依赖集合中</span>
+    deps<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>activeEffect<span class="token punctuation">)</span>
+    <span class="token comment">// 将当前的依赖集合添加到当前激活的副作用函数的相关依赖集合数组中(实际上就是一种双向添加)</span>
+    activeEffect<span class="token punctuation">.</span>deps<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>deps<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>于是<code>effectFn.deps</code>数组中就收集了与副作用函数自身相关联的<code>依赖集合</code>。</p>
+<p>下面我们就需要对其进行<code>清理</code>了，即：<code>每次副作用函数执行就将其自身从依赖集合中删除</code>，为此我们需要写一个<code>cleanup</code>函数:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">cleanup</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    effectFn<span class="token punctuation">.</span>deps<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">deps</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 从每个依赖集合中移除当前副作用函数</span>
+        deps<span class="token punctuation">.</span><span class="token function">delete</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+    <span class="token comment">// 重置effectFn.deps数组</span>
+    effectFn<span class="token punctuation">.</span>deps<span class="token punctuation">.</span>length <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>在副作用函数中去调用<code>cleanup</code>: </p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">let</span> activeEffect
+<span class="token keyword">function</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token parameter">fn</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> <span class="token function-variable function">effectFn</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 执行清理</span>
+        <span class="token function">cleanup</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+        activeEffect <span class="token operator">=</span> effectFn
+        <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span>
+    effectFn<span class="token punctuation">.</span>deps <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>至此我们的响应式系统已经可以避免副作用函数产生遗留了。</p>
+<p><img src="https://shanghai-1309153523.cos.ap-shanghai.myqcloud.com/%E5%88%86%E6%94%AF%E5%88%87%E6%8D%A2%E4%B8%8Ecleanup.gif" alt="分支切换与cleanup" loading="lazy"></p>
+<p>但如果此时尝试运行代码会<code>导致无限循环执行</code>，最后爆栈，其原因出在<code>trigger</code>函数中:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">trigger</span><span class="token punctuation">(</span><span class="token parameter">target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> newVal</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> depsMap <span class="token operator">=</span> bucket<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>depsMap<span class="token punctuation">)</span> <span class="token keyword">return</span>
+    <span class="token keyword">const</span> effects <span class="token operator">=</span> depsMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+    effects <span class="token operator">&amp;&amp;</span> effects<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">fn</span> <span class="token operator">=></span> <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// 新产生的问题来自于这里</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>在<code>effectFn</code>副作用函数内部，我们在执行完<code>cleanup</code>后，会<code>执行一次原始副作用函数</code>。外层<code>trigger</code>函数对<code>依赖集合的forEach遍历仍在进行中</code>时，又被<code>读取操作拦截</code>后添加到<code>依赖集合</code>中，forEach永远<code>执行不完</code>。</p>
+<p>对于这个问题我们只需要在forEach的集合上在套一层<code>new Set()</code>即可：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">trigger</span><span class="token punctuation">(</span><span class="token parameter">target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> newVal</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> depsMap <span class="token operator">=</span> bucket<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>depsMap<span class="token punctuation">)</span> <span class="token keyword">return</span>
+    <span class="token keyword">const</span> effects <span class="token operator">=</span> depsMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+    effects <span class="token operator">&amp;&amp;</span> <span class="token keyword">new</span> <span class="token class-name">Set</span><span class="token punctuation">(</span>effects<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">fn</span> <span class="token operator">=></span> <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>相当于用new Set() 做了一次<code>缓存</code>操作(* 这里是否使用<code>WeakSet</code>会更好？)。</p>
+<p>至此，<code>问题三</code>解决了。</p>
+<h3 id="嵌套的effect与effect栈"><a href="#嵌套的effect与effect栈" class="headerlink" title="嵌套的effect与effect栈"></a>嵌套的effect与effect栈</h3><p>在Vuejs的设计中effect是支持嵌套的，如:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token function">effect</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token function">effectFn1</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token function">effect</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token function">effectFn2</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token comment">/* ... */</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<p>实际上Vuejs的渲染函数就是在一个effect中执行的:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> Foo <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token comment">/* ... */</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>即为:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+    Foo<span class="token punctuation">.</span><span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<p>发生嵌套时:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> Bar <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token comment">/* ... */</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token comment">// Foo 组件渲染了 Bar 组件</span>
+<span class="token keyword">const</span> Foo <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token operator">&lt;</span>Bar <span class="token operator">/</span><span class="token operator">></span> <span class="token comment">// jsx语法</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+    Foo<span class="token punctuation">.</span><span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+        Bar<span class="token punctuation">.</span><span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<p>接下来我们拿上文实现的响应式系统测试运行一下:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> data <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+    foo<span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span> bar<span class="token operator">:</span> <span class="token boolean">true</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> <span class="token comment">/* ... */</span><span class="token punctuation">)</span>
+<span class="token keyword">let</span> temp1<span class="token punctuation">,</span> temp2
+<span class="token function">effect</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token function">effectFn1</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'effectFn1执行'</span><span class="token punctuation">)</span>
+    <span class="token function">effect</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token function">effectFn2</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'effectFn2执行'</span><span class="token punctuation">)</span>
+        temp2 <span class="token operator">=</span> obj<span class="token punctuation">.</span>bar
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+    temp1 <span class="token operator">=</span> obj<span class="token punctuation">.</span>foo
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<p>理想状态下，我们应该是先执行<code>effectFn1</code>，将<code>effectFn1</code>收集到<code>obj.foo</code>对应的依赖集合中，之后执行<code>effectFn2</code>，将<code>effectFn2</code>收集到<code>obj.bar</code>对应的依赖集合中，对应的树型结构应该是如下:</p>
+<pre class="language-yml" data-language="yml"><code class="language-yml">target
+ - foo
+    - effectFn1
+ - bar
+    - effectFn2</code></pre>
+
+<p>这种情况下，我们希望修改<code>obj.foo</code>的值会触发<code>effectFn1</code>和<code>effectFn2</code>执行，而修改<code>obj.bar</code>时只触发<code>effectFn2</code>执行，然而此时我们修改<code>obj.foo</code>时会发现:</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token string">'effectFn2执行'</span></code></pre>
+
+<p>输出的仅仅是<code>effectFn2</code>执行，<code>问题四</code>出现了。</p>
+<p>这个问题出现的原因是副作用函数中的activeEffect:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">let</span> activeEffect
+<span class="token keyword">function</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token parameter">fn</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">function</span> <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token function">cleanup</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+        activeEffect <span class="token operator">=</span> effectFn <span class="token comment">// 问题在这里</span>
+        <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span>
+    effectFn<span class="token punctuation">.</span>deps <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>其实际执行的是这样的程序:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">let</span> activeEffect
+effectFn1<span class="token punctuation">.</span>deps <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token function">cleanup</span><span class="token punctuation">(</span>effectFn1<span class="token punctuation">)</span>
+activeEffect <span class="token operator">=</span> effectFn1
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'effectFn1执行'</span><span class="token punctuation">)</span>
+effectFn2<span class="token punctuation">.</span>deps <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token function">cleanup</span><span class="token punctuation">(</span>effectFn2<span class="token punctuation">)</span>
+activeEffect <span class="token operator">=</span> effectFn2 <span class="token comment">// 问题在这里</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'effectFn2执行'</span><span class="token punctuation">)</span>
+temp2 <span class="token operator">=</span> obj<span class="token punctuation">.</span>bar <span class="token comment">// 触发 bar 的读取拦截，将effectFn2 添加到 bar 对应的依赖集合中</span>
+temp1 <span class="token operator">=</span> obj<span class="token punctuation">.</span>foo <span class="token comment">// 触发 foo 的读取拦截，将effectFn2 添加到 foo 对应的依赖集合中</span></code></pre>
+
+<p>activeEffect变量所存储的<code>当前副作用函数</code>只能有一个，当发生嵌套时，<code>内层副作用函数</code>会覆盖这个变量，等内层运行栈运行结束的时候变量已经被污染了。</p>
+<p>所以我们需要重新设计一个栈的数据结构，当嵌套函数完成时弹出最近一次的<code>副作用函数</code>即可。</p>
+<p>代码如下:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">let</span> activeEffect<span class="token punctuation">,</span> effectStack <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token keyword">function</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token parameter">fn</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">function</span> <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">cleanup</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+        <span class="token comment">// 激活副作用函数</span>
+        activeEffect <span class="token operator">=</span> effectFn
+        <span class="token comment">// 每次激活副作用函数都先向栈中压入这个副作用函数</span>
+        effectStack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+        <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token comment">// 执行完上一个运行栈再从栈中弹出一个副作用函数</span>
+        effectStack<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token comment">// 重新激活本次运行栈中的副作用函数</span>
+        activeEffect <span class="token operator">=</span> effectStack<span class="token punctuation">[</span>effectStack<span class="token punctuation">.</span>length <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span>
+    <span class="token punctuation">&#125;</span>
+    effectFn<span class="token punctuation">.</span>deps <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>修改过后，代码执行步骤如下:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">let</span> activeEffect<span class="token punctuation">,</span> effectStack <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+effectFn1<span class="token punctuation">.</span>deps <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token function">cleanup</span><span class="token punctuation">(</span>effectFn1<span class="token punctuation">)</span>
+activeEffect <span class="token operator">=</span> effectFn1
+effectStack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>effectFn1<span class="token punctuation">)</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'effectFn1执行'</span><span class="token punctuation">)</span>
+effectFn2<span class="token punctuation">.</span>deps <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token function">cleanup</span><span class="token punctuation">(</span>effectFn2<span class="token punctuation">)</span>
+activeEffect <span class="token operator">=</span> effectFn2
+effectStack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>effectFn2<span class="token punctuation">)</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'effectFn2执行'</span><span class="token punctuation">)</span>
+temp2 <span class="token operator">=</span> obj<span class="token punctuation">.</span>bar <span class="token comment">// 触发 bar 的读取拦截，将effectFn2 添加到 bar 对应的依赖集合中</span>
+effectStack<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+activeEffect <span class="token operator">=</span> effectFn1 <span class="token comment">// 问题解决了</span>
+temp1 <span class="token operator">=</span> obj<span class="token punctuation">.</span>foo <span class="token comment">// 触发 foo 的读取拦截，将effectFn1 添加到 foo 对应的依赖集合中</span>
+effectStack<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+activeEffect <span class="token operator">=</span> <span class="token keyword">undefined</span></code></pre>
+
+<p>自己画了个动图帮助理解:</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/article-images/read-vuejs/%E5%89%AF%E4%BD%9C%E7%94%A8%E5%87%BD%E6%95%B0%E6%A0%88.gif" alt="副作用函数栈-动图" loading="lazy"></p>
+<p>至此<code>问题四</code>解决了。</p>
+<h3 id="避免无限递归循环"><a href="#避免无限递归循环" class="headerlink" title="避免无限递归循环"></a>避免无限递归循环</h3><p>系统的架构需要盘细节，嵌套的问题解决了，我们考虑一下自增操作:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> obj<span class="token punctuation">.</span>foo<span class="token operator">++</span><span class="token punctuation">)</span></code></pre>
+
+<p>此处的副作用函数，既读取了<code>obj.foo</code>，也设置了<code>obj.foo</code>的值，<code>问题五</code>出现了: 首先读取<code>obj.foo</code>的值，触发track操作，将<code>副作用函数</code>存入<code>Set</code>依赖集合，此时读取操作还正在进行中，又设置了<code>obj.foo</code>的值<code>+1</code>，触发<code>trigger</code>操作，即把<code>Set</code>中刚存入的<code>副作用函数</code>取出并执行了。<code>副作用函数</code>正在执行中又触发了读取<code>obj.foo</code>的<code>track</code>操作……</p>
+<p>为了解决这个问题我们只要简单的在<code>trigger</code>函数遍历依赖集合时过滤一下即可：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">trigger</span><span class="token punctuation">(</span><span class="token parameter">targer<span class="token punctuation">,</span> key<span class="token punctuation">,</span> newVal</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> depsMap <span class="token operator">=</span> bucket<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>depsMap<span class="token punctuation">)</span> <span class="token keyword">return</span>
+    <span class="token keyword">const</span> effects <span class="token operator">=</span> depsMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+    <span class="token keyword">const</span> newEffects <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Set</span><span class="token punctuation">(</span>effects<span class="token punctuation">)</span>
+    newEffects<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">fn</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>fn <span class="token operator">!==</span> activeEffect<span class="token punctuation">)</span> <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>过滤掉当前激活的<code>副作用函数</code>，就可以避免类似自增操作后产生的无限递归的问题，<code>问题五</code>解决。</p>
+<h3 id="调度执行"><a href="#调度执行" class="headerlink" title="调度执行"></a>调度执行</h3><p>可调度性是响应式系统中一个很重要的特性，所谓可调度性，是指当<code>trigger</code>触发副作用重新执行时，有能力决定副作用函数的执行时机、次数以及方式。</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> data <span class="token operator">=</span> <span class="token punctuation">&#123;</span> foo<span class="token operator">:</span> <span class="token number">1</span> <span class="token punctuation">&#125;</span>
+<span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span><span class="token comment">/* ... */</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>obj<span class="token punctuation">.</span>foo<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+obj<span class="token punctuation">.</span>foo<span class="token operator">++</span>
+
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'结束了'</span><span class="token punctuation">)</span></code></pre>
+
+<p>这段代码输出如下:</p>
+<pre class="language-shell" data-language="shell"><code class="language-shell"><span class="token number">1</span>
+<span class="token number">2</span>
+<span class="token string">'结束了'</span></code></pre>
+
+<p>假设我需要它打印:</p>
+<pre class="language-shell" data-language="shell"><code class="language-shell"><span class="token number">1</span>
+<span class="token string">'结束了'</span>
+<span class="token number">2</span></code></pre>
+
+<p>有什么办法在不调整业务代码的同时做到呢？这时候就需要响应系统支持<code>调度</code>。</p>
+<p>我们为<code>effect</code>设置一个选项参数，允许用户<code>传入自定义调度器</code>:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>obj<span class="token punctuation">.</span>foo<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+<span class="token comment">// options</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">// 调度器 scheduler 是一个函数</span>
+    <span class="token function">scheduler</span><span class="token punctuation">(</span><span class="token parameter">fn</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token comment">// ...</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<p>我们需要在<code>effect</code>函数内部，把选项挂在<code>副作用函数</code>上面:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token parameter">fn<span class="token punctuation">,</span> options <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span></span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">function</span> <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token function">clearEffect</span><span class="token punctuation">(</span>fn<span class="token punctuation">)</span>
+        activeEffect <span class="token operator">=</span> effectFn
+        effectStack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+        <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        effectStack<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        activeEffect <span class="token operator">=</span> effectStack<span class="token punctuation">[</span>effectStack<span class="token punctuation">.</span>length <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span>
+    <span class="token punctuation">&#125;</span>
+    effectFn<span class="token punctuation">.</span>deps <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    effectFn<span class="token punctuation">.</span>options <span class="token operator">=</span> options
+    <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>有了调度器，我们就可以在<code>trigger</code>触发副作用函数重新执行时，调用用户传入的调度器函数，把<code>控制权移交给用户</code>:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">trigger</span><span class="token punctuation">(</span><span class="token parameter">target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> newVal</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> depsMap <span class="token operator">=</span> bucket<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>depsMap<span class="token punctuation">)</span> <span class="token keyword">return</span>
+    <span class="token keyword">const</span> effects <span class="token operator">=</span> depsMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+    <span class="token keyword">const</span> newEffects <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Set</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    effects<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">fn</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>fn <span class="token operator">!==</span> activeEffect<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// 存入非激活的副作用函数</span>
+            newEffects<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>fn<span class="token punctuation">)</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+    newEffects<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">effectFn</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">.</span>options<span class="token punctuation">.</span>scheduler<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            <span class="token comment">// 使用传入调度器执行</span>
+            effectFn<span class="token punctuation">.</span>options<span class="token punctuation">.</span><span class="token function">scheduler</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+        <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+            <span class="token comment">// 直接执行</span>
+            <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>在<code>trigger</code>触发副作用函数执行时，我们优先判断该副作用函数是否存在<code>调度器</code>，如果有，就让用户自己控制如何执行，并把副作用函数传递给<code>调度器</code>，否则直接执行副作用函数。</p>
+<p>有了这个基础之后，就可以实现前文的调度需求了:</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> data <span class="token operator">=</span> <span class="token punctuation">&#123;</span> foo<span class="token operator">:</span> <span class="token number">1</span> <span class="token punctuation">&#125;</span>
+<span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span> <span class="token comment">/* ... */</span> <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>obj<span class="token punctuation">.</span>foo<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">scheduler</span><span class="token punctuation">(</span><span class="token parameter">fn</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token comment">// 将副作用函数放入一个宏任务队列中执行</span>
+        <span class="token function">setTimeout</span><span class="token punctuation">(</span>fn<span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+obj<span class="token punctuation">.</span>foo<span class="token operator">++</span>
+
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'结束了'</span><span class="token punctuation">)</span></code></pre>
+
+<p>我们使用一个<code>setTimeout</code>函数开启一个宏任务，来执行副作用函数fn，这样就能实现期望的打印顺序了：</p>
+<pre class="language-shell" data-language="shell"><code class="language-shell"><span class="token number">1</span>
+结束了
+<span class="token number">2</span></code></pre>
+
+<blockquote>
+<p>除了控制副作用函数的执行时机，我们还能做到控制它的执行次数，这一点也尤为重要，思考如下例子：</p>
+</blockquote>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> data <span class="token operator">=</span> <span class="token punctuation">&#123;</span> foo<span class="token operator">:</span> <span class="token number">1</span> <span class="token punctuation">&#125;</span>
+<span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span> <span class="token comment">/* ... */</span> <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>obj<span class="token punctuation">.</span>foo<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+obj<span class="token punctuation">.</span>foo<span class="token operator">++</span>
+obj<span class="token punctuation">.</span>foo<span class="token operator">++</span></code></pre>
+
+<p>它的输出如下:</p>
+<pre class="language-shell" data-language="shell"><code class="language-shell"><span class="token number">1</span>
+<span class="token number">2</span>
+<span class="token number">3</span></code></pre>
+
+<p>由输出可知，<code>obj.foo</code>的值由<code>1</code>经过两次自增最后变成了<code>3</code>，<code>2</code>是其过度状态。假设我们只关心结果，不想知道过程，那么第二次打印就是多余的，我们期望的打印结果是：</p>
+<pre class="language-shell" data-language="shell"><code class="language-shell"><span class="token number">1</span>
+<span class="token number">3</span></code></pre>
+
+<p>其中不包含过渡态，基于调度器，我们可以很容易的实现此功能：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> jobQueue <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Set</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token keyword">const</span> p <span class="token operator">=</span> Promise<span class="token punctuation">.</span><span class="token function">resolve</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token keyword">let</span> isFlushing <span class="token operator">=</span> <span class="token boolean">false</span>
+<span class="token keyword">function</span> <span class="token function">flushJobs</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>isFlushing<span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token boolean">false</span>
+    isFlushing <span class="token operator">=</span> <span class="token boolean">true</span>
+    p<span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+        jobQueue<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">fn</span> <span class="token operator">=></span> <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">finally</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+        isFlushing <span class="token operator">=</span> <span class="token boolean">false</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">const</span> data <span class="token operator">=</span> <span class="token punctuation">&#123;</span> foo<span class="token operator">:</span> <span class="token number">1</span> <span class="token punctuation">&#125;</span>
+<span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span> <span class="token comment">/* ... */</span> <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+<span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>obj<span class="token punctuation">.</span>foo<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">scheduler</span><span class="token punctuation">(</span><span class="token parameter">fn</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        jobQueue<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>fn<span class="token punctuation">)</span>
+        <span class="token function">flushJobs</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+obj<span class="token punctuation">.</span>foo<span class="token operator">++</span>
+obj<span class="token punctuation">.</span>foo<span class="token operator">++</span></code></pre>
+
+<p>首先我们定义了一个任务队列<code>jobQueue</code>，它是一个<code>Set</code>数据结构，目的是利用<code>Set</code>数据结构自动去重的能力。接着我们每次调度执行时，都会先将<code>副作用函数</code>添加到<code>jobQueue</code>队列中，并尝试使用一个<code>flushJobs</code>函数刷新任务队列。我们把目光移到flushJobs函数，因为其有一个<code>isFlushing</code>的标志，无论执行多少次函数，在一个微任务周期内，队列只会刷新一次。</p>
+<p>整段代码的效果是，连续对<code>obj.foo</code>进行两次自增操作，会同步且连续的两次调用<code>scheduler</code>调度函数，意味着同一个副作用函数会被<code>jobQueue</code>添加两次，但由于<code>jobQueue</code>是一个<code>Set</code>数据结构，会自动去重，所以最终<code>jobQueue</code>中只会有一项任务，即当前副作用函数。类似的<code>flushJobs</code>也会同步且连续的执行两次，但由于<code>isFlushing</code>标志的存在，实际一个微任务周期只会执行一次，当微任务队列开始执行时会遍历<code>jobQueue</code>，由于此时<code>jobQueue</code>只有一个副作用函数，所以只会执行一次，而此时<code>obj.foo</code>的值已经是<code>3</code>了，这样我们就实现了期望的输出:</p>
+<pre class="language-shell" data-language="shell"><code class="language-shell"><span class="token number">1</span>
+<span class="token number">3</span></code></pre>
+<blockquote>
+<p>Vue.js在多次连续修改响应式数据只会触发一次更新正是因为内部实现了一个更完善的调度器，思路与上文相同。</p>
+</blockquote>
+<h3 id="计算属性-computed-与-lazy"><a href="#计算属性-computed-与-lazy" class="headerlink" title="计算属性 computed 与 lazy"></a>计算属性 computed 与 lazy</h3><p>基于以上<code>effect</code>的实现，其实就可以帮你建造Vuejs 3种的<code>computed</code>计算属性了，在这之前得先了解一下懒执行的<code>effect</code>，即<code>lazy</code>的<code>effect</code>。举个例子：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>obj<span class="token punctuation">.</span>foo<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// 现在这个副作用函数会立即执行</span></code></pre>
+
+<p>但是在有些场景下，我并不希望它立即执行，而是希望它在需要的时候才执行，例如计算属性。这时我们需要在<code>options</code>中添加<code>lazy</code>属性来达到目的：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>obj<span class="token punctuation">.</span>foo<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>
+    lazy<span class="token operator">:</span> <span class="token boolean">true</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span></code></pre>
+
+<p><code>lazy</code>和之前介绍的<code>scheduler</code>一样，通过<code>options</code>选项对象指定。有了他我们就可以修改<code>effect</code>函数的实现逻辑了，当<code>lazy</code>为<code>true</code>时则不执行副作用函数：（* 但是同<code>scheduler</code>不同的是，<code>lazy</code>从收集依赖开始就不执行。）</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token parameter">fn<span class="token punctuation">,</span> options <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span></span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> <span class="token function-variable function">effectFn</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+        <span class="token function">cleanup</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+        activeEffect <span class="token operator">=</span> effectFn
+        effectStack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>activeEffect<span class="token punctuation">)</span>
+        <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        effectStack<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        activeEffect <span class="token operator">=</span> effectStack<span class="token punctuation">[</span>effectStack<span class="token punctuation">.</span>length <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span>
+    <span class="token punctuation">&#125;</span>
+    effectFn<span class="token punctuation">.</span>deps <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    effectFn<span class="token punctuation">.</span>options <span class="token operator">=</span> options
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>options<span class="token punctuation">.</span>lazy<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> effectFn
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>通过以上更改，我们就能控制<code>effectFn</code>不立即执行，但是，<code>副作用函数</code>应该在什么时候执行呢？我们已经将<code>副作用函数</code>作为<code>effect</code>函数的返回值，这意味着调用<code>effect</code>函数时就能拿到<code>副作用函数</code>，这样我们就可以考虑先试试手动执行<code>副作用函数</code>了：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> effectFn <span class="token operator">=</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>obj<span class="token punctuation">.</span>foo<span class="token punctuation">)</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>
+    lazy<span class="token operator">:</span> <span class="token boolean">true</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token comment">// 手动执行</span>
+<span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+
+<p>但光是这样并没有意义，我们需要通过computed拿到一个副作用函数的执行的结果，目前的实现还不能做到，例如：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> effectFn <span class="token operator">=</span> <span class="token function">effect</span><span class="token punctuation">(</span>
+    <span class="token comment">// 传入一个getter，可能返回任何值</span>
+    <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> obj<span class="token punctuation">.</span>foo <span class="token operator">+</span> obj<span class="token punctuation">.</span>bar<span class="token punctuation">,</span>
+    <span class="token punctuation">&#123;</span>
+        lazy<span class="token operator">:</span> <span class="token boolean">true</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">)</span>
+<span class="token keyword">const</span> res <span class="token operator">=</span> <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+
+<p>我们还需要对effect函数内部做一些细微的更改：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token parameter">fn<span class="token punctuation">,</span> options <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span></span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> <span class="token function-variable function">effectFn</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+        <span class="token function">cleanup</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+        activeEffect <span class="token operator">=</span> effectFn
+        effectStack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+        <span class="token keyword">const</span> res <span class="token operator">=</span> <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// 缓存副作用函数的执行结果</span>
+        effectStack<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        activeEffect <span class="token operator">=</span> effectFn<span class="token punctuation">[</span>effectFn<span class="token punctuation">.</span>length <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span>
+        <span class="token keyword">return</span> res <span class="token comment">// 并把它返回出来</span>
+    <span class="token punctuation">&#125;</span>
+    effectFn<span class="token punctuation">.</span>deps <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    effectFn<span class="token punctuation">.</span>options <span class="token operator">=</span> options
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span>options<span class="token punctuation">.</span>lazy<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> effectFn
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>这样我们就可以通过懒执行effect返回的副作用函数，拿到计算结果了。接着我们就来实现真正的<code>computed</code>计算属性吧：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">computed</span><span class="token punctuation">(</span><span class="token parameter">getter</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> effectFn <span class="token operator">=</span> <span class="token function">effect</span><span class="token punctuation">(</span>getter<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>
+        lazyL<span class="token operator">:</span> <span class="token boolean">true</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 我们返回一个对象，该对象的value属性是一个访问器属性</span>
+        <span class="token keyword">get</span> <span class="token function">value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            <span class="token keyword">const</span> value <span class="token operator">=</span> <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token keyword">return</span> value
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">return</span> obj
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>我们定义一个<code>computed</code>函数，它接受一个<code>getter</code>函数作为参数，我们把<code>getter</code>函数当作副作用函数传入<code>effect</code>中，用它来创建一个<code>lazy</code>懒执行的<code>effect</code>。<code>computed</code>会返回一个对象，对该对象<code>value</code>属性的访问会触发副作用函数执行，也就是只有读取<code>value</code>值的时候才会执行<code>effectFn</code>并将其结果作为返回值返回。</p>
+<p>我们现在可以通过computed创建一个计算属性：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> data <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+    foo<span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span> 
+    bar<span class="token operator">:</span> <span class="token number">2</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span> <span class="token comment">/* ... */</span> <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token keyword">const</span> sum <span class="token operator">=</span> <span class="token function">computed</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> obj<span class="token punctuation">.</span>foo <span class="token operator">+</span> obj<span class="token punctuation">.</span>bar<span class="token punctuation">)</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>sum<span class="token punctuation">.</span>value<span class="token punctuation">)</span> <span class="token comment">// 3</span></code></pre>
+
+<p>可以看到它可以正确的工作了。不过我们现在只实现了<code>懒执行</code>，即当访问<code>computed</code>计算属性的<code>value</code>才会执行副作用函数。还做不到对值进行<code>缓存</code>。</p>
+<p>为什么要缓存？当我们多次访问sum.value时，effectFn多次被执行，即使是obj.foo和obj.bar本身都没有产生变化：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript">console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>sum<span class="token punctuation">.</span>value<span class="token punctuation">)</span> <span class="token comment">// 3</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>sum<span class="token punctuation">.</span>value<span class="token punctuation">)</span> <span class="token comment">// 3</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>sum<span class="token punctuation">.</span>value<span class="token punctuation">)</span> <span class="token comment">// 3</span></code></pre>
+
+<p>以上每次访问都会触发effectFn计算。为了解决这个问题，我们需要实现对value值的缓存：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">computed</span><span class="token punctuation">(</span><span class="token parameter">getter</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">let</span> value
+    <span class="token keyword">let</span> dirty <span class="token operator">=</span> <span class="token boolean">true</span>
+    <span class="token keyword">const</span> effectFn <span class="token operator">=</span> <span class="token function">effect</span><span class="token punctuation">(</span>getter<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>
+        lazy<span class="token operator">:</span> <span class="token boolean">true</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">get</span> <span class="token function">value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span><span class="token punctuation">(</span>dirty<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+                value <span class="token operator">=</span> <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                dirty <span class="token operator">=</span> <span class="token boolean">false</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token keyword">return</span> value
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">return</span> obj
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>当<code>dirty</code>被置为<code>true</code>时，才会执行副作用函数，之后<code>dirty</code>会被置为<code>false</code>，当value属性再被访问时，直接返回之前的计算结果。</p>
+<p>显然，代码目前到这儿还有问题：如果我们此时更改<code>obj.foo</code>和<code>obj.bar</code>的值并不会触发value值的更改，但是他们的修改还是会触发effectFn，我们需要再借助<code>scheduler</code>调度的能力了。</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">computed</span><span class="token punctuation">(</span><span class="token parameter">getter</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">let</span> value
+    <span class="token keyword">let</span> dirty <span class="token operator">=</span> <span class="token boolean">true</span>
+
+    <span class="token keyword">const</span> effectFn <span class="token operator">=</span> <span class="token function">effect</span><span class="token punctuation">(</span>getter<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>
+        lazy<span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+        <span class="token function">scheduler</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            <span class="token comment">// 把脏值重置为true，下次读取就会执行effectFn更新value值了</span>
+            dirty <span class="token operator">=</span> <span class="token boolean">true</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">get</span> <span class="token function">value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span><span class="token punctuation">(</span>dirty<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+                value <span class="token operator">=</span> <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                dirty <span class="token operator">=</span> <span class="token boolean">false</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token keyword">return</span> value
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">return</span> obj
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>这样，当下一次访问value属性时，dirty属性已经被恢复成true了，副作用函数会重新执行更新value值，这样就能达到缓存value值的目的了。</p>
+<p>现在我们的计算属性已经趋于完美了，但还是需要考虑一下嵌套的情况：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">const</span> sum <span class="token operator">=</span> <span class="token function">computed</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> obj<span class="token punctuation">.</span>foo <span class="token operator">+</span> obj<span class="token punctuation">.</span>bar<span class="token punctuation">)</span>
+<span class="token keyword">const</span> sumRes <span class="token operator">=</span> <span class="token function">computed</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> sum<span class="token punctuation">.</span>value<span class="token punctuation">)</span>
+obj<span class="token punctuation">.</span>foo<span class="token operator">++</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>sumRes<span class="token punctuation">.</span>value<span class="token punctuation">)</span></code></pre>
+
+<p>从本质上讲，这就是一个<code>effect</code>嵌套问题，目前我们可以外部<code>effect</code>执行触发内部<code>effect</code>执行，但是内部<code>effect</code>不会收集外部<code>effect</code>的副作用函数，解决这个问题，我们需要重新用到<code>track</code>和<code>trigger</code>这两个我们提前封装的方法：</p>
+<pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">computed</span><span class="token punctuation">(</span><span class="token parameter">getter</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">let</span> value
+    <span class="token keyword">let</span> dirty <span class="token operator">=</span> <span class="token boolean">true</span>
+
+    <span class="token keyword">const</span> effectFn <span class="token operator">=</span> <span class="token function">effect</span><span class="token punctuation">(</span>getter<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>
+        lazy<span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+        <span class="token function">scheduler</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            dirty <span class="token operator">=</span> <span class="token boolean">true</span>
+            <span class="token comment">// 执行外部设置逻辑</span>
+            <span class="token function">trigger</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> <span class="token string">'value'</span><span class="token punctuation">)</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">get</span> <span class="token function">value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span><span class="token punctuation">(</span>dirty<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+                value <span class="token operator">=</span> <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                dirty <span class="token operator">=</span> <span class="token boolean">false</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token comment">// 收集外部副作用函数</span>
+            <span class="token function">track</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> <span class="token string">'value'</span><span class="token punctuation">)</span>
+            <span class="token keyword">return</span> value
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">return</span> obj
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>当读取一个计算属性的<code>value</code>值时，手动调用<code>track</code>函数收集外部<code>effect</code>传入的<code>副作用函数</code>(* 由于<code>闭包</code>或者说当前执行栈所在的<code>词法作用域</code>，此时的<code>track</code>中读取到的<code>activeEffect</code>为<code>外部effect</code>接收的<code>副作用函数</code>，即完成了对<code>() =&gt; console.log(sum.value)</code>的收集)，之后又在scheduler调度器中手动触发trigger，执行外部effect的设置逻辑(* 外部effect也有可能是一个<code>computed</code>)。</p>
+<p>至此，一个<code>computed</code>计算属性被设计出来了。</p>
+</div><div id="reward-container"><span class="hty-icon-button button-glow" id="reward-button" title="打赏" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === &quot;none&quot;) ? &quot;block&quot; : &quot;none&quot;;"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-hand-coin-line"></use></svg></span><div id="reward-comment">我很可爱，请给我钱.</div><div id="qr" style="display:none;"><div style="display:inline-block"><a target="_blank" rel="noopener" href="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/alipay.jpg"><img loading="lazy" src="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/alipay.jpg" alt="支付宝" title="支付宝"></a><div><span style="color:#00A3EE"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-alipay-line"></use></svg></span></div></div><div style="display:inline-block"><a target="_blank" rel="noopener" href="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/wechatpay-qrcode.jpg"><img loading="lazy" src="https://cdn.jsdelivr.net/gh/Meglody/Meglody.github.io@gh-pages/images/wechatpay-qrcode.jpg" alt="微信支付" title="微信支付"></a><div><span style="color:#2DC100"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-wechat-pay-line"></use></svg></span></div></div></div></div><ul class="post-copyright"><li class="post-copyright-author"><strong>本文作者：</strong>卡西猫倒</li><li class="post-copyright-link"><strong>本文链接：</strong><a href="https://meglody.github.io/read/%E8%AF%BB%E3%80%8AVue-js%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%E3%80%8B-%20%E5%93%8D%E5%BA%94%E7%B3%BB%E7%BB%9F/" title="读《Vue.js设计与实现》- 响应系统">https://meglody.github.io/read/%E8%AF%BB%E3%80%8AVue-js%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%E3%80%8B-%20%E5%93%8D%E5%BA%94%E7%B3%BB%E7%BB%9F/</a></li><li class="post-copyright-license"><strong>版权声明：</strong>本博客所有文章除特别声明外，均默认采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener" title="CC BY-NC-SA 4.0 "><svg class="icon"><use xlink:href="#icon-creative-commons-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-by-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-nc-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-sa-line"></use></svg></a> 许可协议。</li></ul></section></article><div class="post-nav"><div class="post-nav-item"><a class="post-nav-prev" href="/diary/%E5%9F%BA%E4%BA%8Edocker%E7%9A%84sentry%E7%A7%81%E6%9C%8D%E6%90%AD%E5%BB%BA%E6%B5%81%E7%A8%8B/" rel="prev" title="基于docker的sentry私服搭建流程"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-left-s-line"></use></svg><span class="post-nav-text">基于docker的sentry私服搭建流程</span></a></div><div class="post-nav-item"><a class="post-nav-next" href="/read/%E8%AF%BB%E3%80%8AVue-js%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%E3%80%8B-%20%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1%E6%A6%82%E8%A7%88/" rel="next" title="读《Vue.js设计与实现》- 框架设计概览"><span class="post-nav-text">读《Vue.js设计与实现》- 框架设计概览</span><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-right-s-line"></use></svg></a></div></div></div><div class="hty-card" id="comment"><div class="comment-tooltip text-center"><span>如果您有任何关于博客内容的相关讨论，欢迎前往 <a href="https://github.com/Meglody/Meglody.github.io/discussions" target="_blank">GitHub Discussions</a> 与我交流。</span><br></div><div id="waline"></div><script>Yun.utils.getScript("https://cdn.jsdelivr.net/npm/@waline/client/dist/Waline.min.js", () => {
+  const walineConfig = {"enable":true,"serverURL":"https://gh-comments-5z0r2ute3-meglody.vercel.app/","comment":true,"visitor":true,"emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis@latest/bilibili/","https://cdn.jsdelivr.net/gh/walinejs/emojis@latest/weibo/","https://cdn.jsdelivr.net/gh/walinejs/emojis@latest/qq/"],"locale":{"placeholder":"填写邮箱，可以收到回复通知哦～"},"requiredMeta":["nick"],"el":"#waline","lang":"zh-CN"}
+  walineConfig.path = "/read/%E8%AF%BB%E3%80%8AVue-js%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%E3%80%8B-%20%E5%93%8D%E5%BA%94%E7%B3%BB%E7%BB%9F/"
+  walineConfig.dark = 'html[data-user-color-scheme="dark"]'
+  new Waline(walineConfig)
+}, window.Waline);</script></div></main><footer class="sidebar-translate" id="footer"><div class="copyright"><span>&copy; 2019 – 2022 </span><span class="with-love" id="animate"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-cloud-line"></use></svg></span><span class="author"> 卡西猫倒</span></div><div class="powered"><span>由 <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> 驱动 v5.4.0</span><span class="footer-separator">|</span><span>主题 - <a rel="noopener" href="https://github.com/YunYouJun/hexo-theme-yun" target="_blank"><span>Yun</span></a> v1.7.0</span></div></footer><a class="hty-icon-button" id="back-to-top" aria-label="back-to-top" href="#"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-up-s-line"></use></svg><svg class="progress-circle-container" viewBox="0 0 100 100"><circle class="progress-circle" id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke="#6200ee" stroke-width="2" stroke-linecap="round"></circle></svg></a><script>const date = new Date();
+const today = (date.getMonth() + 1) + "-" + date.getDate()
+const mourn_days = ["5-12","12-13"]
+if (mourn_days.includes(today)) {
+  document.documentElement.style.filter = "grayscale(1)";
+}</script></div></body></html>
